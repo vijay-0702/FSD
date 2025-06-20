@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+     <style>
+        body {
+            background: linear-gradient(135deg, #6b7280, #d1d5db);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Roboto', sans-serif;
+            padding: 20px;
+        }
+        .converter-card {
+            border: 2px solid #0d6efd;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            background: #ffffff;
+            max-width: 500px;
+            width: 100%;
+            padding: 2rem;
+        }
+        .card-title {
+            color: #1e3a8a;
+            font-weight: 600;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-control, .form-select {
+            border-radius: 10px;
+            font-size: 1.1rem;
+            padding: 12px;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 10px rgba(13, 110, 253, 0.25);
+        }
+        .form-label {
+            font-size: 1.1rem;
+            color: #1f2937;
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border: none;
+            padding: 12px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            transform: translateY(-3px);
+        }
+        #result {
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: #1f2937;
+            margin-top: 2rem;
+            min-height: 30px; /* Ensure visibility */
+            text-align: center;
+        }
+        .error {
+            color: #dc3545;
+            font-size: 1.2rem;
+        }
+        .loading {
+            color: #6b7280;
+            font-style: italic;
+        }
+        .to-label {
+            font-size: 1.2rem;
+            color: #4b5563;
+            margin: 1rem 0;
+            text-align: center;
+        }
+    </style> 
+</head>
+<body>
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <div class="converter-card card">
+            <div class="card-body">
+                <h2 class="card-title text-center">Currency Converter</h2>
+                <div class="mb-4">
+                    <label for="amount" class="form-label">Amount</label>
+                    <input type="number" id="amount" class="form-control" placeholder="Enter amount" value="1" min="0" step="0.01">
+                </div>
+                <div class="mb-4">
+                    <label for="fromCurrency" class="form-label">From</label>
+                    <select id="fromCurrency" class="form-select">
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                        <option value="INR">INR - Indian Rupee</option>
+                    </select>
+                </div>
+                <div class="to-label">To</div>
+                <div class="mb-4">
+                    <label for="toCurrency" class="form-label"></label>
+                    <select id="toCurrency" class="form-select">
+                        <option value="USD">USD - US Dollar</option>
+                        <option value="EUR">EUR - Euro</option>
+                        <option value="GBP">GBP - British Pound</option>
+                        <option value="JPY">JPY - Japanese Yen</option>
+                        <option value="INR">INR - Indian Rupee</option>
+                    </select>
+                </div>
+                <button onclick="convertCurrency()" class="btn btn-primary w-100">Convert</button>
+                <div id="result" class="text-center"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS (with Popper.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        async function convertCurrency() {
+            const amount = document.getElementById('amount').value;
+            const fromCurrency = document.getElementById('fromCurrency').value;
+            const toCurrency = document.getElementById('toCurrency').value;
+            const resultDiv = document.getElementById('result');
+
+            // Validate input
+            if (!amount || amount <= 0) {
+                resultDiv.innerHTML = '<span class="error">Please enter a valid amount.</span>';
+                return;
+            }
+
+            // Show loading state
+            resultDiv.innerHTML = '<span class="loading">Converting...</span>';
+
+            // If same currency, no API call needed
+            if (fromCurrency === toCurrency) {
+                resultDiv.innerHTML = `${amount} ${fromCurrency} = ${parseFloat(amount).toFixed(2)} ${toCurrency}`;
+                return;
+            }
+
+            // Fallback rates (for offline testing or API failure)
+            const fallbackRates = {
+                USD: { USD: 1, EUR: 0.93, GBP: 0.79, JPY: 158.7, INR: 83.7 },
+                EUR: { USD: 1.07, EUR: 1, GBP: 0.85, JPY: 170.0, INR: 89.6 },
+                GBP: { USD: 1.27, EUR: 1.18, GBP: 1, JPY: 200.7, INR: 105.8 },
+                JPY: { USD: 0.0063, EUR: 0.0059, GBP: 0.0050, JPY: 1, INR: 0.53 },
+                INR: { USD: 0.012, EUR: 0.011, GBP: 0.0094, JPY: 1.89, INR: 1 }
+            };
+
+            try {
+                console.log(`Fetching: https://api.frankfurter.app/latest?from=${fromCurrency}`);
+                const response = await fetch(`https://api.frankfurter.app/latest?from=${fromCurrency}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('API Response:', data);
+
+                // Check if target currency exists in rates
+                const rate = data.rates[toCurrency];
+                if (rate) {
+                    const convertedAmount = (amount * rate).toFixed(2);
+                    resultDiv.innerHTML = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency}`;
+                } else {
+                    console.warn(`Currency ${toCurrency} not found in API response. Using fallback.`);
+                    const fallbackRate = fallbackRates[fromCurrency][toCurrency];
+                    const convertedAmount = (amount * fallbackRate).toFixed(2);
+                    resultDiv.innerHTML = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency} (Fallback)`;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                resultDiv.innerHTML = '<span class="error">Error: Unable to connect to API. Using fallback rates.</span>';
+                const fallbackRate = fallbackRates[fromCurrency][toCurrency];
+                if (fallbackRate) {
+                    const convertedAmount = (amount * fallbackRate).toFixed(2);
+                    resultDiv.innerHTML = `${amount} ${fromCurrency} = ${convertedAmount} ${toCurrency} (Fallback)`;
+                } else {
+                    resultDiv.innerHTML = '<span class="error">Error: Conversion not available.</span>';
+                }
+            }
+        }
+
+        // Auto-trigger conversion on input change
+        document.getElementById('amount').addEventListener('input', convertCurrency);
+        document.getElementById('fromCurrency').addEventListener('change', convertCurrency);
+        document.getElementById('toCurrency').addEventListener('change', convertCurrency);
+    </script>
+</body>
+</html>
